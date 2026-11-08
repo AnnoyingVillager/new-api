@@ -24,6 +24,7 @@ import (
 	relaychannel "github.com/QuantumNous/new-api/relay/channel"
 	relaycommon "github.com/QuantumNous/new-api/relay/common"
 	"github.com/QuantumNous/new-api/relay/helper"
+	"github.com/QuantumNous/new-api/relay/responsescompat"
 	"github.com/QuantumNous/new-api/relaykit/dto"
 	"github.com/QuantumNous/new-api/relaykit/types"
 	"github.com/QuantumNous/new-api/service"
@@ -205,6 +206,10 @@ func (s *responsesWSSession) runRequest(state *responsesWSCallState, message []b
 		s.clientWriteMu.Lock()
 		s.stateMu.Lock()
 		if outgoing != nil {
+			// FORK-RESPONSES-COMPAT: terminal frames bypass writeClient.
+			if outgoing.kind == websocket.TextMessage {
+				outgoing.body = responsescompat.RewriteResponsePayload(outgoing.body, s.lockedModel)
+			}
 			if err := s.client.SetWriteDeadline(s.clientWriteBudget.Deadline(time.Now(), len(outgoing.body))); err != nil {
 				state.closeCode = websocket.CloseInternalServerErr
 			} else if err := s.client.WriteMessage(outgoing.kind, outgoing.body); err != nil {
@@ -721,6 +726,10 @@ func (s *responsesWSSession) writeTarget(kind int, message []byte) error {
 func (s *responsesWSSession) writeClient(kind int, message []byte) error {
 	s.clientWriteMu.Lock()
 	defer s.clientWriteMu.Unlock()
+	// FORK-RESPONSES-COMPAT: rewrite text frames only; binary payloads are opaque.
+	if kind == websocket.TextMessage {
+		message = responsescompat.RewriteResponsePayload(message, s.lockedModel)
+	}
 	if err := s.client.SetWriteDeadline(s.clientWriteBudget.Deadline(time.Now(), len(message))); err != nil {
 		return err
 	}
@@ -848,6 +857,11 @@ func normalizeResponsesWSCreateEvent(message []byte, event responsesWSCreateEven
 		}
 	}
 	payload := doc.Bytes()
+	// FORK-RESPONSES-COMPAT: patch before typed DTO decoding omits the source id.
+	payload, err := responsescompat.PatchRequestPayload(payload)
+	if err != nil {
+		return create, fmt.Errorf("patch responses compatibility request: %w", err)
+	}
 	if err := common.Unmarshal(payload, &create.Request); err != nil {
 		return create, err
 	}

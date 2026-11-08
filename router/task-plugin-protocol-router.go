@@ -6,6 +6,7 @@ import (
 	"github.com/QuantumNous/new-api/controller"
 	"github.com/QuantumNous/new-api/middleware"
 	pluginruntime "github.com/QuantumNous/new-api/pkg/jsplugin"
+	"github.com/QuantumNous/new-api/relay/responsescompat"
 	"github.com/QuantumNous/new-api/relaykit/types"
 	"github.com/gin-gonic/gin"
 )
@@ -27,9 +28,10 @@ func SetTaskPluginProtocolRouter(router *gin.Engine) {
 func taskPluginProtocolHandlers(protocol, operation string) ([]gin.HandlerFunc, error) {
 	switch protocol + "." + operation {
 	case "openai_responses.create":
+		// FORK-RESPONSES-COMPAT: repair requests and restore the client model.
 		return []gin.HandlerFunc{
 			middleware.RouteTag("relay"), middleware.SystemPerformanceCheck(), middleware.TokenAuth(),
-			middleware.ModelRequestRateLimit(), middleware.RouteTaskPluginEndpoint(), middleware.PrepareTaskPluginEndpoint(), middleware.Distribute(),
+			middleware.ModelRequestRateLimit(), responsescompat.Middleware(), middleware.RouteTaskPluginEndpoint(), middleware.PrepareTaskPluginEndpoint(), middleware.Distribute(),
 			func(c *gin.Context) {
 				controller.RelayTaskPluginEndpoint(c, func(c *gin.Context) { controller.Relay(c, types.RelayFormatOpenAIResponses) })
 			},

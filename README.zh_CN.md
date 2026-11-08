@@ -220,6 +220,13 @@ docker compose up -d
 docker compose logs -f new-api
 ```
 
+<!-- FORK-RESPONSES-COMPAT -->
+### Responses 兼容层（本 Fork）
+
+本 Fork 在 New API 进程内启用 Responses 兼容层：修复工具输出项（`function_call_output` / `custom_tool_call_output`）缺失的 `call_id`，并将 HTTP、SSE 和 WebSocket 响应中的模型恢复为客户端请求的模型别名。它随现有单镜像构建，不需要额外容器或端口。
+
+设置 `RESPONSES_COMPAT_ENABLED=false` 可整体关闭；`RESPONSES_CALL_ID_MODE=fill|move|off` 控制 call ID 修复方式，默认 `move`。上游修复后可关闭此层，详细审查清单见[本 Fork 变更说明](./FORK_CHANGES_RESPONSES_COMPAT.md)。
+
 ### 存储与配置
 
 | 组件 | 可选方案 |

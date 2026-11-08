@@ -19,6 +19,7 @@ import (
 	relaychannel "github.com/QuantumNous/new-api/relay/channel"
 	relaycommon "github.com/QuantumNous/new-api/relay/common"
 	relayconstant "github.com/QuantumNous/new-api/relay/constant"
+	"github.com/QuantumNous/new-api/relay/responsescompat"
 	"github.com/QuantumNous/new-api/relaykit/dto"
 	"github.com/QuantumNous/new-api/relaykit/types"
 	"github.com/QuantumNous/new-api/service"
@@ -472,6 +473,25 @@ func TestNormalizeResponsesWSCreateEventFlat(t *testing.T) {
 	}
 }
 
+func TestNormalizeResponsesWSCreateEventPatchesToolOutputID(t *testing.T) {
+	t.Setenv(responsescompat.EnabledEnv, "true")
+	t.Setenv(responsescompat.CallIDModeEnv, "move")
+	message := []byte(`{"type":"response.create","response":{"model":"alias","input":[{"type":"function_call_output","id":"call_123","output":"ok"}]}}`)
+
+	create, _, err := normalizeResponsesWSTestMessage(message)
+	require.NoError(t, err)
+	var payload struct {
+		Input []struct {
+			CallID string `json:"call_id"`
+			ID     string `json:"id"`
+		} `json:"input"`
+	}
+	require.NoError(t, common.Unmarshal(create.Body, &payload))
+	require.Len(t, payload.Input, 1)
+	assert.Equal(t, "call_123", payload.Input[0].CallID)
+	assert.Empty(t, payload.Input[0].ID)
+}
+
 // The HTTP body and the upstream event keep the client's member order and
 // number spelling; only the WebSocket members change.
 func TestResponsesWSCreateEventKeepsClientBytes(t *testing.T) {
@@ -677,6 +697,23 @@ func TestResponsesWSShutdownInterruptsBusyWriter(t *testing.T) {
 	require.NoError(t, latePeer.SetReadDeadline(time.Now().Add(time.Second)))
 	_, _, err := latePeer.ReadMessage()
 	assert.True(t, websocket.IsCloseError(err, websocket.CloseNormalClosure), "want a 1000 close frame, got %v", err)
+}
+
+func TestResponsesWSWriteClientRewritesOnlyTextModels(t *testing.T) {
+	t.Setenv(responsescompat.EnabledEnv, "true")
+	client, server, cleanup := newTestWebSocketPair(t)
+	defer cleanup()
+	session := &responsesWSSession{client: server, lockedModel: "alias"}
+
+	require.NoError(t, session.writeClient(websocket.TextMessage, []byte(`{"model":"upstream","response":{"model":"upstream"}}`)))
+	_, text, err := client.ReadMessage()
+	require.NoError(t, err)
+	assert.JSONEq(t, `{"model":"alias","response":{"model":"alias"}}`, string(text))
+
+	require.NoError(t, session.writeClient(websocket.BinaryMessage, []byte(`{"model":"upstream"}`)))
+	_, binary, err := client.ReadMessage()
+	require.NoError(t, err)
+	assert.JSONEq(t, `{"model":"upstream"}`, string(binary))
 }
 
 func TestResponsesWSPassthroughPreservesRawPricingParameters(t *testing.T) {
