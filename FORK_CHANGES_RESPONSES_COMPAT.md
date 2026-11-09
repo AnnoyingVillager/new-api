@@ -45,6 +45,11 @@ No channel adapter, billing code, database schema, authentication code, or
 Dockerfile change is required. The existing single-binary image includes the
 new package automatically.
 
+Before building, the fork workflow fetches upstream Git tags, finds the newest
+upstream release tag reachable from the custom branch, and writes that tag to
+`VERSION`. The displayed application version therefore tracks the upstream
+release while remaining independent of fork-only commits.
+
 The fork workflow publishes these GHCR tags from `codex/responses-compat`:
 
 ```text
