@@ -31,7 +31,6 @@ jobs:
           fetch-depth: 0
 
       - name: Resolve upstream version
-        id: upstream-version
         shell: bash
         env:
           UPSTREAM_REPOSITORY: https://github.com/QuantumNous/new-api.git
