@@ -58,6 +58,15 @@
 
 ---
 
+<!-- FORK-RESPONSES-COMPAT -->
+## Responses compatibility layer (this branch)
+
+This branch repairs Responses input items (`function_call_output` and `custom_tool_call_output`) that are missing `call_id`, and restores the client-requested model alias in HTTP, SSE, and WebSocket responses. The compatibility layer is built into the existing single image; no extra container or port is required.
+
+Set `RESPONSES_COMPAT_ENABLED=false` to disable the layer. See [Fork changes](./FORK_CHANGES_RESPONSES_COMPAT.md) for review and rollback details.
+
+---
+
 ## 📝 Project Description
 
 New API is a self-hosted AI gateway for applications, agents, and teams. Connect upstream model services, expose a consistent API to your clients, and manage routing, access, usage, and costs in one place.

@@ -54,6 +54,15 @@
 
 ---
 
+<!-- FORK-RESPONSES-COMPAT -->
+## Responses 相容層（本分支）
+
+本分支修復缺少 `call_id` 的 Responses 工具輸出項目（`function_call_output` / `custom_tool_call_output`），並在 HTTP、SSE 與 WebSocket 回應中將模型還原為用戶端請求的模型別名。相容層包含在現有單一映像中，不需要額外容器或連接埠。
+
+設定 `RESPONSES_COMPAT_ENABLED=false` 可停用此相容層；審查與回復細節請參閱[本 Fork 變更說明](./FORK_CHANGES_RESPONSES_COMPAT.md)。
+
+---
+
 ## 📝 項目說明
 
 New API 是面向應用程式、Agent 和團隊的自託管 AI 閘道。將不同供應商的模型服務接入統一入口，在同一套控制台中管理渠道、存取權限、用量與成本。

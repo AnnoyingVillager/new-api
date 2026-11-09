@@ -55,6 +55,15 @@
 
 ---
 
+<!-- FORK-RESPONSES-COMPAT -->
+## Couche de compatibilité Responses (cette branche)
+
+Cette branche corrige les éléments de sortie d’outil Responses (`function_call_output` et `custom_tool_call_output`) auxquels il manque `call_id`, et rétablit l’alias de modèle demandé par le client dans les réponses HTTP, SSE et WebSocket. La couche de compatibilité est intégrée à l’image unique existante ; aucun conteneur ni port supplémentaire n’est nécessaire.
+
+Définissez `RESPONSES_COMPAT_ENABLED=false` pour la désactiver. Consultez les [modifications de ce fork](./FORK_CHANGES_RESPONSES_COMPAT.md) pour les détails de vérification et de retour arrière.
+
+---
+
 ## 📝 Description du projet
 
 New API est une passerelle IA auto-hébergée pour les applications, les agents et les équipes. Connectez vos fournisseurs de modèles, exposez une API commune à vos clients et gérez le routage, les accès, les usages et les coûts depuis une même console.

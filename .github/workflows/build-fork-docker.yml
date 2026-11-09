@@ -3,7 +3,6 @@ name: Build fork Docker image
 on:
   push:
     branches:
-      - main
       - 'codex/**'
   workflow_dispatch:
     inputs:
@@ -46,10 +45,10 @@ jobs:
         with:
           images: ghcr.io/annoyingvillager/new-api
           tags: |
-            type=raw,value=responses-compat
+            type=raw,value=responses-compat,enable=${{ (github.event_name == 'workflow_dispatch' && inputs.ref == 'codex/responses-compat') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/responses-compat') }}
             type=ref,event=branch,prefix=branch-
             type=sha,prefix=sha-
-            type=raw,value=latest,enable=${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+            type=raw,value=latest,enable=${{ (github.event_name == 'workflow_dispatch' && inputs.ref == 'codex/responses-compat') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/responses-compat') }}
 
       - name: Build and push
         uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0

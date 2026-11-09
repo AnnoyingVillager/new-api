@@ -37,7 +37,7 @@ upstream sync. It is not part of New API's product documentation.
   request and rewrites text response frames before they reach the client.
 - `relay/responses_websocket_test.go`: verifies text-frame rewriting and
   leaves binary frames opaque.
-- `README.zh_CN.md`: short deployment and rollback note.
+- `README*.md`: the same compatibility-layer notice in every top-level language, placed before the project description.
 - `.github/workflows/build-fork-docker.yml`: builds the existing Dockerfile on
   GitHub Actions and publishes `linux/amd64` images to GHCR.
 
@@ -45,7 +45,7 @@ No channel adapter, billing code, database schema, authentication code, or
 Dockerfile change is required. The existing single-binary image includes the
 new package automatically.
 
-The fork workflow publishes these GHCR tags from `main`:
+The fork workflow publishes these GHCR tags from `codex/responses-compat`:
 
 ```text
 ghcr.io/annoyingvillager/new-api:responses-compat
@@ -54,16 +54,18 @@ ghcr.io/annoyingvillager/new-api:sha-<commit>
 ghcr.io/annoyingvillager/new-api:latest
 ```
 
-Pushes to `codex/**` branches publish the stable, branch, and commit tags
-without moving `latest`. A manual `workflow_dispatch` defaults its `ref` input
-to `codex/responses-compat`, so the image is built from that branch.
+Pushes to `codex/responses-compat` publish the stable, branch, and commit tags.
+Other `codex/**` branches publish only their branch and commit tags, so they
+cannot replace the stable or `latest` images. A manual `workflow_dispatch`
+defaults its `ref` input to `codex/responses-compat`. The fork's `main` remains
+an upstream-sync baseline and is not an image build branch.
 
 Fork-specific integration points are marked with
 `FORK-RESPONSES-COMPAT`. This marker is the quickest way to locate the pieces
 to review or remove after an upstream sync:
 
 ```sh
-rg -n 'FORK-RESPONSES-COMPAT' router relay README.zh_CN.md
+rg -n 'FORK-RESPONSES-COMPAT' router relay 'README*.md'
 ```
 
 The layer sits after request authentication and rate limiting, before the

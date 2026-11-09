@@ -55,6 +55,15 @@
 
 ---
 
+<!-- FORK-RESPONSES-COMPAT -->
+## Responses 互換レイヤー（このブランチ）
+
+このブランチでは、`call_id` が欠落した Responses のツール出力項目（`function_call_output` / `custom_tool_call_output`）を修復し、HTTP、SSE、WebSocket のレスポンスでクライアントが要求したモデルエイリアスを復元します。互換レイヤーは既存の単一イメージに含まれ、追加のコンテナやポートは不要です。
+
+`RESPONSES_COMPAT_ENABLED=false` を設定するとこのレイヤーを無効にできます。確認とロールバックの詳細は[本 Fork の変更内容](./FORK_CHANGES_RESPONSES_COMPAT.md)を参照してください。
+
+---
+
 ## 📝 プロジェクト説明
 
 New API は、アプリケーション、Agent、チーム向けのセルフホスト型 AI ゲートウェイです。各社のモデルサービスを共通の入口に接続し、ルーティング、アクセス権、使用量、コストを一つの管理画面で扱えます。
