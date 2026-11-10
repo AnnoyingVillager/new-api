@@ -57,13 +57,9 @@
 ---
 
 <!-- FORK-RESPONSES-COMPAT -->
-## 本分支定制内容
+## Responses 兼容层（本分支）
 
 本分支修复缺少 `call_id` 的 Responses 工具输出项（`function_call_output` / `custom_tool_call_output`），并在 HTTP、SSE 和 WebSocket 响应中将模型恢复为客户端请求的模型别名。兼容层包含在现有单镜像中，不需要额外容器或端口。
-
-<!-- FORK-MAIL-RATE-LIMIT -->
-本分支还通过 Redis 执行每日收件人邮件配额：注册验证邮件默认 200 人，所有邮件默认 290 人，并在 00:00 UTC（北京时间 08:00）重置。可在 **系统设置 → 运维 → 邮件发送限额** 中配置。
-<!-- /FORK-MAIL-RATE-LIMIT -->
 
 设置 `RESPONSES_COMPAT_ENABLED=false` 可关闭该层；审查与回滚细节见[本 Fork 变更说明](./FORK_CHANGES_RESPONSES_COMPAT.md)。
 

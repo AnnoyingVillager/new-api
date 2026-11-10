@@ -57,13 +57,9 @@
 ---
 
 <!-- FORK-RESPONSES-COMPAT -->
-## Fork customizations (this branch)
+## Responses compatibility layer (this branch)
 
 This branch repairs Responses input items (`function_call_output` and `custom_tool_call_output`) that are missing `call_id`, and restores the client-requested model alias in HTTP, SSE, and WebSocket responses. The compatibility layer is built into the existing single image; no extra container or port is required.
-
-<!-- FORK-MAIL-RATE-LIMIT -->
-It also enforces a Redis-backed daily email-recipient quota. Defaults are 200 recipients for registration verification and 290 for all email; both reset at 00:00 UTC (08:00 Asia/Shanghai). Configure it in **System Settings → Operations → Email rate limits**.
-<!-- /FORK-MAIL-RATE-LIMIT -->
 
 Set `RESPONSES_COMPAT_ENABLED=false` to disable the layer. See [Fork changes](./FORK_CHANGES_RESPONSES_COMPAT.md) for review and rollback details.
 

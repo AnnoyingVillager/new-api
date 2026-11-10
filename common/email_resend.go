@@ -8,8 +8,6 @@ import (
 	"net/mail"
 	"strings"
 	"time"
-
-	"github.com/QuantumNous/new-api/extensions/mailrate"
 )
 
 var resendEmailClient = &http.Client{
@@ -39,7 +37,7 @@ func ValidateResendConfiguration(apiKey, from string) error {
 // OWASP Authentication / Session Management / Forgot Password cheat sheets:
 // do not expose credentials, verification codes or reset links in errors/logs.
 // This transport does not change token expiry, single-use or session rules.
-func sendResendEmail(apiKey, from, subject, receiver, content string, kind mailrate.Kind) error {
+func sendResendEmail(apiKey, from, subject, receiver, content string) error {
 	if err := ValidateResendConfiguration(apiKey, from); err != nil {
 		return err
 	}
@@ -73,9 +71,6 @@ func sendResendEmail(apiKey, from, subject, receiver, content string, kind mailr
 	}
 	req.Header.Set("Authorization", "Bearer "+apiKey)
 	req.Header.Set("Content-Type", "application/json")
-	if err := reserveEmailQuota(kind, len(to)); err != nil {
-		return err
-	}
 	resp, err := resendEmailClient.Do(req)
 	if err != nil {
 		SysError(LogText("Resend request failed: error=%q", err))

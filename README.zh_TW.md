@@ -55,13 +55,9 @@
 ---
 
 <!-- FORK-RESPONSES-COMPAT -->
-## 本分支自訂內容
+## Responses 相容層（本分支）
 
 本分支修復缺少 `call_id` 的 Responses 工具輸出項目（`function_call_output` / `custom_tool_call_output`），並在 HTTP、SSE 與 WebSocket 回應中將模型還原為用戶端請求的模型別名。相容層包含在現有單一映像中，不需要額外容器或連接埠。
-
-<!-- FORK-MAIL-RATE-LIMIT -->
-本分支也透過 Redis 執行每日收件者郵件配額：註冊驗證郵件預設 200 人，所有郵件預設 290 人，並於 00:00 UTC（台北時間 08:00）重置。可在 **系統設定 → 維運 → 郵件傳送限額** 中設定。
-<!-- /FORK-MAIL-RATE-LIMIT -->
 
 設定 `RESPONSES_COMPAT_ENABLED=false` 可停用此相容層；審查與回復細節請參閱[本 Fork 變更說明](./FORK_CHANGES_RESPONSES_COMPAT.md)。
 

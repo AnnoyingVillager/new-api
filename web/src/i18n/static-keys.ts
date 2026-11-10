@@ -819,8 +819,6 @@ export const STATIC_I18N_KEYS = [
   'Account binding',
   'Account unlinking',
   'Email confirmation code resend',
-  // FORK-MAIL-RATE-LIMIT: Operations navigation title.
-  'Email rate limits',
   // Administrative step-up titles keyed by ManageUser action.
   'Verify to disable user',
   'Verify to enable user',

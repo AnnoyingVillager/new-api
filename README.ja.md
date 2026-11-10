@@ -56,13 +56,9 @@
 ---
 
 <!-- FORK-RESPONSES-COMPAT -->
-## このブランチのカスタマイズ
+## Responses 互換レイヤー（このブランチ）
 
 このブランチでは、`call_id` が欠落した Responses のツール出力項目（`function_call_output` / `custom_tool_call_output`）を修復し、HTTP、SSE、WebSocket のレスポンスでクライアントが要求したモデルエイリアスを復元します。互換レイヤーは既存の単一イメージに含まれ、追加のコンテナやポートは不要です。
-
-<!-- FORK-MAIL-RATE-LIMIT -->
-このブランチは Redis を使って 1 日あたりのメール受信者数も制限します。登録確認メールは 200 人、全メールは 290 人が既定値で、00:00 UTC（上海時間 08:00）にリセットされます。**システム設定 → 運用 → メール送信上限** で設定できます。
-<!-- /FORK-MAIL-RATE-LIMIT -->
 
 `RESPONSES_COMPAT_ENABLED=false` を設定するとこのレイヤーを無効にできます。確認とロールバックの詳細は[本 Fork の変更内容](./FORK_CHANGES_RESPONSES_COMPAT.md)を参照してください。
 
