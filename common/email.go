@@ -1,13 +1,17 @@
 package common
 
 import (
+	"context"
 	"crypto/tls"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"net/smtp"
 	"slices"
 	"strings"
 	"time"
+
+	"github.com/QuantumNous/new-api/extensions/mailrate"
 )
 
 func generateMessageID() (string, error) {
@@ -76,6 +80,35 @@ func newSMTPClient(addr string) (*smtp.Client, error) {
 }
 
 func SendEmail(subject string, receiver string, content string) error {
+	return sendEmail(subject, receiver, content, mailrate.KindOther)
+}
+
+// FORK-MAIL-RATE-LIMIT: registration verification uses a lower threshold than
+// all other transactional and notification email.
+func SendRegistrationEmail(subject string, receiver string, content string) error {
+	return sendEmail(subject, receiver, content, mailrate.KindRegistration)
+}
+
+func IsEmailRateLimited(err error) bool {
+	return errors.As(err, new(*mailrate.LimitError))
+}
+
+func IsEmailQuotaUnavailable(err error) bool {
+	return errors.Is(err, mailrate.ErrRedisUnavailable)
+}
+
+func reserveEmailQuota(kind mailrate.Kind, recipients int) error {
+	OptionMapRWMutex.RLock()
+	rawConfig := OptionMap[mailrate.OptionKey]
+	client := RDB
+	OptionMapRWMutex.RUnlock()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	return mailrate.Reserve(ctx, client, rawConfig, kind, recipients, time.Now())
+}
+
+func sendEmail(subject string, receiver string, content string, kind mailrate.Kind) error {
 	OptionMapRWMutex.RLock()
 	provider := OptionMap["EmailProvider"]
 	resendKey := OptionMap["ResendApiKey"]
@@ -85,7 +118,7 @@ func SendEmail(subject string, receiver string, content string) error {
 	// a failed response does not prove that the first provider did not send.
 	switch provider {
 	case "resend":
-		return sendResendEmail(resendKey, resendFrom, subject, receiver, content)
+		return sendResendEmail(resendKey, resendFrom, subject, receiver, content, kind)
 	case "", "smtp": // Preserve existing installations without a selector.
 	default:
 		return NewMessage("Email sending method must be SMTP or Resend")
@@ -121,6 +154,15 @@ func SendEmail(subject string, receiver string, content string) error {
 		if err = client.Auth(auth); err != nil {
 			return err
 		}
+	}
+	recipientCount := 0
+	for _, address := range to {
+		if strings.TrimSpace(address) != "" {
+			recipientCount++
+		}
+	}
+	if err = reserveEmailQuota(kind, recipientCount); err != nil {
+		return err
 	}
 	if err = client.Mail(SMTPFrom); err != nil {
 		return err

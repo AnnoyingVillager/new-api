@@ -8,6 +8,7 @@ import (
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/constant"
+	"github.com/QuantumNous/new-api/extensions/mailrate"
 	"github.com/QuantumNous/new-api/pkg/jsplugin"
 	"github.com/QuantumNous/new-api/setting"
 	"github.com/QuantumNous/new-api/setting/config"
@@ -77,6 +78,9 @@ func InitOptionMap() {
 	common.OptionMap["SMTPStartTLSEnabled"] = strconv.FormatBool(common.SMTPStartTLSEnabled)
 	common.OptionMap["SMTPInsecureSkipVerify"] = strconv.FormatBool(common.SMTPInsecureSkipVerify)
 	common.OptionMap["SMTPForceAuthLogin"] = strconv.FormatBool(common.SMTPForceAuthLogin)
+	// FORK-MAIL-RATE-LIMIT: absent DB values use the fork defaults; an existing
+	// persisted value overrides them when database options are loaded.
+	common.OptionMap[mailrate.OptionKey] = mailrate.DefaultConfigJSON()
 	common.OptionMap["Notice"] = ""
 	common.OptionMap["About"] = ""
 	common.OptionMap["HomePageContent"] = ""
@@ -234,6 +238,12 @@ func SyncOptions(frequency int) {
 func validateOptionValue(key string, value string) error {
 	if key == legacyAccessTokenRetireAtKey {
 		return errLegacyRetireAtReadOnly
+	}
+	if key == mailrate.OptionKey {
+		if err := mailrate.ValidateConfig(value); err != nil {
+			return common.NewMessage("Registration limit must be less than the hard limit, and the hard limit cannot exceed 300.")
+		}
+		return nil
 	}
 	if err := operation_setting.ValidateQuotaOption(key, value); err != nil {
 		return err
