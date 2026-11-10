@@ -45,6 +45,9 @@ const defaultOperationsSettings: OperationsSettings = {
   SMTPStartTLSEnabled: false,
   SMTPInsecureSkipVerify: false,
   SMTPForceAuthLogin: false,
+  // FORK-MAIL-RATE-LIMIT
+  'fork.mail_rate_limit':
+    '{"enabled":true,"registration_limit":200,"hard_limit":290}',
   WorkerUrl: '',
   WorkerValidKey: '',
   WorkerAllowHttpImageRequestEnabled: false,

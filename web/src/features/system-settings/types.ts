@@ -376,6 +376,8 @@ export type OperationsSettings = {
   SMTPStartTLSEnabled: boolean
   SMTPInsecureSkipVerify: boolean
   SMTPForceAuthLogin: boolean
+  // FORK-MAIL-RATE-LIMIT
+  'fork.mail_rate_limit': string
   WorkerUrl: string
   WorkerValidKey: string
   WorkerAllowHttpImageRequestEnabled: boolean
