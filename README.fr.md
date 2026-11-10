@@ -56,9 +56,13 @@
 ---
 
 <!-- FORK-RESPONSES-COMPAT -->
-## Couche de compatibilité Responses (cette branche)
+## Personnalisations de cette branche
 
 Cette branche corrige les éléments de sortie d’outil Responses (`function_call_output` et `custom_tool_call_output`) auxquels il manque `call_id`, et rétablit l’alias de modèle demandé par le client dans les réponses HTTP, SSE et WebSocket. La couche de compatibilité est intégrée à l’image unique existante ; aucun conteneur ni port supplémentaire n’est nécessaire.
+
+<!-- FORK-MAIL-RATE-LIMIT -->
+Cette branche applique aussi un quota quotidien de destinataires avec Redis : 200 destinataires pour la vérification d inscription et 290 pour tous les courriels, avec remise à zéro à 00:00 UTC (08:00 à Shanghai). Configurez-le dans **Paramètres système → Opérations → Limites des courriels**.
+<!-- /FORK-MAIL-RATE-LIMIT -->
 
 Définissez `RESPONSES_COMPAT_ENABLED=false` pour la désactiver. Consultez les [modifications de ce fork](./FORK_CHANGES_RESPONSES_COMPAT.md) pour les détails de vérification et de retour arrière.
 

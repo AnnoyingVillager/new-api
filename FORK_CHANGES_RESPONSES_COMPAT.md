@@ -1,4 +1,4 @@
-# Fork change: Responses compatibility layer
+# Fork-only changes
 
 This file records the fork-only changes made around New API commit
 `8faf1d45e8c101974dc7483324d3d91c8a462ffe`. Use it when reviewing a future
@@ -21,6 +21,32 @@ upstream sync. It is not part of New API's product documentation.
   frames without a response model, billing, routing, and usage accounting
   unchanged.
 
+## Daily email recipient limiter
+
+- Counts successful quota reservations by recipient, so one SMTP or Resend
+  request containing several recipients consumes the same number of units.
+- Registration verification email stops when the current UTC day has reached
+  the configurable registration threshold. Other mail continues until the
+  separate hard threshold. Both defaults allow a request that reaches the
+  threshold exactly and reject the next request.
+- Defaults are 200 registration recipients and 290 total recipients. The
+  default key expires at the next 00:00 UTC boundary, which is 08:00 in
+  Asia/Shanghai. No reset job, database migration, or new container is needed.
+- A Redis Lua script checks the current count and increments atomically. A
+  request that would cross its effective threshold is rejected without
+  incrementing the count. Redis is required while the limiter is enabled.
+- The limiter is controlled by the namespaced option
+  `fork.mail_rate_limit`, for example:
+  `{"enabled":true,"registration_limit":200,"hard_limit":290}`.
+  Administrators can edit it in **System Settings -> Operations -> Email rate
+  limits**.
+- Registration codes are stored only after mail delivery succeeds, so a quota
+  rejection does not leave a code that the user could never receive.
+- Password-reset responses keep the existing anti-enumeration behavior. All
+  production email paths, including notifications and account-security mail,
+  pass through the same backend transport gate. No frontend code decides
+  whether an email may be sent.
+
 ## Changed files
 
 - `relay/responsescompat/compat.go`: request repair, model lookup, and
@@ -40,6 +66,19 @@ upstream sync. It is not part of New API's product documentation.
 - `README*.md`: the same compatibility-layer notice in every top-level language, placed before the project description.
 - `.github/workflows/build-fork-docker.yml`: builds the existing Dockerfile on
   GitHub Actions and publishes `linux/amd64` images to GHCR.
+- `extensions/mailrate/`: isolated UTC-day configuration, Redis Lua
+  reservation, recipient limits, and focused tests.
+- `common/email.go` and `common/email_resend.go`: transport-level quota
+  reservation shared by SMTP and Resend.
+- `controller/misc.go`: classifies registration verification mail, returns 429
+  or 503 for the relevant quota failures, and stores the code after delivery.
+- `controller/misc_mail_rate_limit_test.go`: verifies the registration endpoint
+  returns 429 before calling Resend when the lower threshold is exhausted.
+- `model/option.go`: supplies and validates the namespaced default option.
+- `web/src/features/system-settings/operations/mail-rate-limit-*.tsx|ts`: the
+  Operations page, parsing, serialization, schema, and focused tests.
+- The Operations registry, default values, types, static i18n key, and seven
+  locale files.
 
 No channel adapter, billing code, database schema, authentication code, or
 Dockerfile change is required. The existing single-binary image includes the
@@ -79,7 +118,21 @@ existing Responses handlers. Its only request mutation is the narrow `id` to
 selection, retry, billing, usage accounting, and logging continue to use the
 existing upstream objects.
 
-## Controls and rollback
+## Mail limiter controls and rollback
+
+Use **System Settings -> Operations -> Email rate limits** to disable the
+fork-only limiter or change its thresholds. The effective limits must satisfy
+`0 < registration_limit < hard_limit <= 300`. The runtime Redis key is
+`fork:mailrate:v1:YYYY-MM-DD` in UTC and expires at the next UTC midnight.
+
+For an immediate rollback without an image change, open the Operations page
+and turn off **Enable daily email limits**, then save. To remove the feature
+after an upstream sync, search for `FORK-MAIL-RATE-LIMIT`, remove the isolated
+`extensions/mailrate/` package and marked integration points, then drop the
+frontend section and its locale keys. No database schema rollback is needed;
+the persisted option is inert once the code is removed.
+
+## Responses compatibility controls and rollback
 
 The layer is enabled when `RESPONSES_COMPAT_ENABLED` is unset.
 
@@ -108,6 +161,13 @@ container. No database rollback or image rollback is required.
 5. Remove `relay/responsescompat/`, the marked route/WebSocket integrations,
    the WebSocket test, and the README subsection together. Keep this file
    until the corresponding upstream behavior is confirmed after the sync.
+6. Search for `FORK-MAIL-RATE-LIMIT`. If upstream adds equivalent recipient
+   accounting and UTC-day reset behavior, compare its registration-vs-other
+   classification, multi-recipient counting, atomicity, and fail-closed Redis
+   behavior before removing this module.
+7. Remove the Mail Rate Limit Operations section and marked locale keys only
+   after the backend integration is removed. A persisted
+   `fork.mail_rate_limit` row is safe to leave; it is ignored without the code.
 
 ## Validation
 
@@ -117,11 +177,23 @@ Validated locally with Go `1.26.10` on Windows/amd64:
 go test ./relay/responsescompat
 go test ./relay
 go test ./router ./relay
+go test ./extensions/mailrate
+go test ./common ./model
+go test ./controller -run TestSendEmailVerificationReturns429AtRegistrationQuota
+go test ./... -run '^$'
 go build -o .responsescompat-build-check/new-api.exe .
+
+cd web
+bun check -b
+bun run test
+bun run build
 ```
 
-The final build check used a temporary placeholder for the ignored `web/dist`
-embed directory and removed it afterward. It verifies the main Go binary links
+The all-package compile check and the final Go build passed after the frontend
+build populated the ignored `web/dist` embed directory. The focused Windows
+Go tests passed. A full `go test ./controller` run reached unrelated existing
+tests that share SQLite files concurrently and failed on Windows file locking;
+the controller package compile check and this feature's endpoint test passed. It verifies the main Go binary links
 the modified packages; the normal Docker build replaces that placeholder with
 the Bun-built frontend. The Docker CLI was not available in this workspace, so
 the complete image build must run in CI or on a Docker host before release.
